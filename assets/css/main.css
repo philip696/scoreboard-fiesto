@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --light1: #67bbf7;
+    --light2: #1c448c;
+    --light3: #183a77;
+    --lightcolor: #fff;
+    --dark1: #d92933;
+    --dark2: #8a1b2b;
+    --dark3: #771725;
+    --darkcolor: #fff;
+}
+
+@font-face {
+    font-family: 'BasementGrotesque';
+    src: url('../fonts/BasementGrotesque.otf') format('opentype');
+    /* URL to font file */
+    font-weight: normal;
+    font-style: normal;
+}

@@ -1,0 +1,113 @@
+{
+  "build": {
+    "beforeBuildCommand": "npm run generate",
+    "beforeDevCommand": "npm run dev",
+    "devPath": "http://localhost:3000",
+    "distDir": "../.output/public",
+    "withGlobalTauri": true
+  },
+  "package": {
+    "productName": "scoreboard-basket",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "window": {
+        "all": true
+      },
+      "fs": {
+        "all": false,
+        "copyFile": true,
+        "createDir": true,
+        "removeDir": true,
+        "removeFile": true,
+        "renameFile": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "category": "DeveloperTool",
+      "copyright": "",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "identifier": "com.tauri.basket",
+      "longDescription": "",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": [],
+      "shortDescription": "",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "width": 800,
+        "height": 600,
+        "visible": false,
+        "resizable": true,
+        "fullscreen": false,
+        "label": "indexpage",
+        "title": "Sportkit Scoreboard"
+      },
+      {
+        "width": 800,
+        "height": 600,
+        "visible": false,
+        "resizable": true,
+        "fullscreen": false,
+        "url": "/controller",
+        "label": "controllerpage",
+        "title": "Scoreboard Controller"
+      },
+      {
+        "width": 960,
+        "height": 720,
+        "center": true,
+        "visible": false,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "url": "/configuration",
+        "label": "configurationpage",
+        "title": "Scoreboard Configuration"
+      },
+      {
+        "width": 800,
+        "height": 400,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "url": "/splashscreen",
+        "label": "splashscreen",
+        "title": "Scoreboard Splashscreen"
+      }
+    ]
+  }
+}
