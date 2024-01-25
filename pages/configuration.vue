@@ -181,18 +181,7 @@ export default {
             }
         },
         async openApplication() {
-            let main = new WebviewWindow('indexpage', {
-                alwaysOnTop: true
-            })
-            let controller = new WebviewWindow('controllerpage', {
-                alwaysOnTop: true
-            })
-            let configuration = new WebviewWindow('configurationpage', {
-                alwaysOnTop: true
-            })
-            configuration.hide()
-            main.show()
-            controller.show()
+            invoke('end_config');
         },
         async preview(url: string) {
             this.preview_url = url;

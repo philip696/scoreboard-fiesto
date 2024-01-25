@@ -160,10 +160,7 @@ export default {
             }
         },
         async openConfig() {
-            let config = new WebviewWindow('configurationpage', {
-                alwaysOnTop: true
-            })
-            config.show();
+            invoke('open_config');
         },
         async stopTimer() {
             emit('stop_timer_event')

@@ -1,5 +1,12 @@
 <template>
     <div class="fixed container-body font-basementGrotesque bg-[url('~/assets/img/mock.jpg')]">
+        <div class="bg-iframe">
+            <!-- <iframe width="560" height="315" src="https://www.youtube.com/embed/Ps-0f0K6izM?si=mj9tm8_keiaPgwZC&autoplay=1&controls=0&loop=1&showinfo=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe> -->
+            <video width="320" height="240" autoplay loop muted id="bgVideo">
+                <source src="../assets/video/bg-video.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
         <div class="wrapper-score">
             <img src="../assets//img/light-slim.png" alt="" class="light-left" />
             <img src="../assets//img/light-slim.png" alt="" class="light-right" />
@@ -9,12 +16,12 @@
                     <img src="../assets/img/logo.svg" />
                 </div>
                 <div class="label-header">
-                    <div class="left-label label-score">Terang</div>
-                    <div class="right-label label-score">Gelap</div>
+                    <div class="left-label label-score">{{ teamA.name != '' ? teamA.name : 'Terang' }}</div>
+                    <div class="right-label label-score">{{ teamB.name != '' ? teamB.name : 'Gelap' }}</div>
                 </div>
             </div>
             <div class="body-score">
-                <img src="../assets//img/light-big.png" alt="" class="light-big" />
+                <!-- <img src="../assets//img/light-big.png" alt="" class="light-big" /> -->
                 <div class="score-block">
                     <div class="left-score score-count">
                         <div>{{ teamA.score }}</div>
@@ -36,7 +43,12 @@
                         <div v-for="n in 3" :class="n <= teamA.timeout ? 'active' : ''" class="list-timout"></div>
                     </div>
                 </div>
-                <div class="timer">{{ formatedTime }}</div>
+                <div class="timer">
+                    <div class="timer quarter">
+                        <div class="label-quarter">QUARTER</div>{{ quarter }}
+                    </div>
+                    {{ formatedTime }}
+                </div>
                 <div class="foul-team right-foul">
                     <div class="timout-count">
                         <div v-for="n in 3" :class="n <= teamB.timeout ? 'active' : ''" class="list-timout"></div>
@@ -100,14 +112,14 @@ export default {
             previewUrl: '',
             quarter: 0,
             teamA: {
-                name: 'Tim A',
+                name: '',
                 picture: '',
                 score: 0,
                 foul: 0,
                 timeout: 0
             } as TeamInfo,
             teamB: {
-                name: 'Tim B',
+                name: '',
                 picture: '',
                 score: 0,
                 foul: 0,
@@ -132,8 +144,8 @@ export default {
             this.showBanner(event.payload.url);
         })
         await listen('quarter_event', (event: any) => {
-            console.log("quarter : ", event.payload.quarter)
             this.quarter = event.payload.quarter;
+            invoke('update_quarter', { quarter: this.quarter })
         })
 
         await listen('score_step_event', (event: any) => {
@@ -213,11 +225,11 @@ export default {
                 case 'up':
                     switch (event.payload.team) {
                         case 'teamA':
-                            this.teamA.timeout = this.teamA.timeout + 1 > 5 ? 5 : this.teamA.timeout + 1;
+                            this.teamA.timeout = this.teamA.timeout + 1 > 3 ? 3 : this.teamA.timeout + 1;
                             break;
 
                         case 'teamB':
-                            this.teamB.timeout = this.teamB.timeout + 1 > 5 ? 5 : this.teamB.timeout + 1;
+                            this.teamB.timeout = this.teamB.timeout + 1 > 3 ? 3 : this.teamB.timeout + 1;
                             break;
 
                         default:
@@ -336,13 +348,13 @@ export default {
                     if (this.updateCounter >= 10) {
                         this.updateCounter = 0;
                         invoke('update_time', { time: this.formatedTime });
-                        this.sendToFirebase();
                         emit('timer_event', { value: this.time });
                     }
                     this.time -= 10; // Increment every 10 milliseconds
                     if (this.time <= 0) {
                         this.time = 0;
                         this.stopTimer();
+                        emit('timer_event', { value: this.time });
                     }
                 }, 10);
             }
@@ -606,21 +618,21 @@ div.wrapper-score {
 
 .score-count div {
     position: relative;
-    transform: skew(-8deg);
+    transform: skew(13deg);
 }
 
 .score-count {
     background: linear-gradient(143deg, #ffffff, #dededc);
-    width: 40%;
+    width: 38%;
     position: relative;
     color: var(--lightcolor);
     font-size: 110pt;
     letter-spacing: 2px;
     text-align: center;
     padding: 40px 0 10px;
-    transform: skew(8deg);
+    transform: skew(-13deg);
     border-radius: 18px;
-    margin-left: 40px;
+    /* margin-left: 40px; */
 }
 
 .score-count:before {
@@ -638,14 +650,14 @@ div.wrapper-score {
 }
 
 .right-score.score-count {
-    transform: skew(-8deg);
-    margin-right: 40px;
-    margin-left: 0px;
+    transform: skew(13deg);
+    /* margin-right: 40px; */
+    /* margin-left: 0px; */
     color: var(--darkcolor);
 }
 
 .right-score.score-count div {
-    transform: skew(8deg);
+    transform: skew(-13deg);
 }
 
 .right-score.score-count:before {
@@ -664,7 +676,7 @@ div.wrapper-score {
 }
 
 .timer {
-    color: #ffbc58;
+    color: #ff0;
     font-size: 56pt;
     border: 5px solid #e1e1e1;
     border-radius: 15px;
@@ -763,6 +775,61 @@ img.light-right {
     position: absolute;
     right: -45px;
     z-index: -1;
+    height: 100%;
+}
+
+.timer.quarter {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%);
+    bottom: 100%;
+    font-size: 33pt;
+    width: 70px;
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 9px 0 0;
+    height: 61px;
+    display: flex;
+    align-items: center;
+    color: #202538;
+    justify-content: center;
+    background: linear-gradient(180deg, #ff0 20%, #aa0 60%);
+}
+
+.label-quarter {
+    color: #fff;
+    font-size: 12pt;
+    position: absolute;
+    bottom: 100%;
+    margin-bottom: 10px;
+}
+
+video {
+    position: absolute;
+    width: 100%;
+    height: 177vh;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+}
+
+.bg-iframe {
+    position: absolute;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.video-section div {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.video-section {
+    position: absolute;
+    width: 100%;
     height: 100%;
 }
 </style>

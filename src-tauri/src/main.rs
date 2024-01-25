@@ -8,7 +8,7 @@ use std::fs::File;
 use std::io::{self, Error, Read};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use tauri::Manager;
+use tauri::{AppHandle, Manager};
 use tokio::time::{sleep, Duration};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -51,17 +51,13 @@ fn get_absolute_path_in_home(relative_path: &str) -> Result<PathBuf, String> {
     Ok(absolute_path)
 }
 
-#[tauri::command]
-async fn update_time(
-    time: String,
-    state: tauri::State<'_, Arc<Mutex<AppState>>>,
+async fn produce_to_rabbitmq(
+    host: String,
+    username: String,
+    password: String,
+    routing_key: String,
+    message: String,
 ) -> Result<(), String> {
-    // println!("Publishing message: {}", time);
-    let host = state.lock().unwrap().rabbitmq_host.to_string();
-    let username = state.lock().unwrap().rabbitmq_username.to_string();
-    let password = state.lock().unwrap().rabbitmq_password.to_string();
-
-    //amqp://alifwr:alifsrabbit@alif.codes:5672
     let amqp_uri = format!("amqp://{}:{}@{}:5672", username, password, host); //state.lock().unwrap().rabbitmq_host.to_string(); // Replace with your URI
 
     // Connect to the AMQP server
@@ -74,21 +70,49 @@ async fn update_time(
         .await
         .expect("Failed to create a channel");
 
-    let queue_name = format!("basket.event.time.{}", state.lock().unwrap().field_id);
-
-    // Publish a message
     channel
         .basic_publish(
-            "amq.topic", // Exchange
-            &queue_name, // Routing key (queue name)
+            "amq.topic",  // Exchange
+            &routing_key, // Routing key (queue name)
             BasicPublishOptions::default(),
-            &time.as_bytes().to_vec(),
+            &message.as_bytes().to_vec(),
             BasicProperties::default(),
         )
         .await
-        .map_err(|e| e.to_string())?
-        .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())
+        .unwrap();
+
+    Ok(())
+}
+
+#[tauri::command]
+fn update_time(time: String, state: tauri::State<'_, Arc<Mutex<AppState>>>) -> Result<(), String> {
+    let host = state.lock().unwrap().rabbitmq_host.to_string();
+    let username = state.lock().unwrap().rabbitmq_username.to_string();
+    let password = state.lock().unwrap().rabbitmq_password.to_string();
+    let routing_key = format!("basket.event.time.{}", state.lock().unwrap().field_id);
+
+    tokio::spawn(async move {
+        let _ = produce_to_rabbitmq(host, username, password, routing_key, time).await;
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+fn update_quarter(
+    quarter: String,
+    state: tauri::State<'_, Arc<Mutex<AppState>>>,
+) -> Result<(), String> {
+    let host = state.lock().unwrap().rabbitmq_host.to_string();
+    let username = state.lock().unwrap().rabbitmq_username.to_string();
+    let password = state.lock().unwrap().rabbitmq_password.to_string();
+    let routing_key = format!("basket.event.quarter.{}", state.lock().unwrap().field_id);
+
+    tokio::spawn(async move {
+        let _ = produce_to_rabbitmq(host, username, password, routing_key, quarter).await;
+    });
 
     Ok(())
 }
@@ -141,6 +165,25 @@ fn save_config(
         }
     };
     // Optionally, log or do something after updating the state
+}
+
+#[tauri::command]
+fn open_config(app: AppHandle) -> Result<(), String> {
+    let config_window = app.get_window("configurationpage").unwrap();
+    config_window.show().unwrap();
+    Ok(())
+}
+
+#[tauri::command]
+fn end_config(app: AppHandle) -> Result<(), String> {
+    // let mut app_state = app_state.lock().unwrap();
+    let config_window = app.get_window("configurationpage").unwrap();
+    let main_window = app.get_window("indexpage").unwrap();
+    let controller_window = app.get_window("controllerpage").unwrap();
+    config_window.hide().unwrap();
+    main_window.show().unwrap();
+    controller_window.show().unwrap();
+    Ok(())
 }
 
 #[tauri::command]
@@ -205,8 +248,11 @@ async fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             update_time,
+            update_quarter,
             save_config,
-            get_config
+            get_config,
+            open_config,
+            end_config
         ])
         .setup(|app| {
             let splashscreen_window = app.get_window("splashscreen").unwrap();
