@@ -16,8 +16,12 @@
                     <img src="../assets/img/logo.svg" />
                 </div>
                 <div class="label-header">
-                    <div class="left-label label-score">{{ teamA.name != '' ? teamA.name : 'Terang' }}</div>
-                    <div class="right-label label-score">{{ teamB.name != '' ? teamB.name : 'Gelap' }}</div>
+                    <div class="left-label label-score">
+                        <div>{{ teamA.name != '' ? teamA.name : 'Terang' }}</div>
+                    </div>
+                    <div class="right-label label-score">
+                        <div>{{ teamB.name != '' ? teamB.name : 'Gelap' }}</div>
+                    </div>
                 </div>
             </div>
             <div class="body-score">
@@ -43,8 +47,8 @@
                         <div v-for="n in 3" :class="n <= teamA.timeout ? 'active' : ''" class="list-timout"></div>
                     </div>
                 </div>
-                <div class="timer">
-                    <div class="timer quarter">
+                <div class="timer font-martianMono">
+                    <div class="timer quarter font-basementGrotesque">
                         <div class="label-quarter">QUARTER</div>{{ quarter }}
                     </div>
                     {{ formatedTime }}
@@ -82,10 +86,10 @@
             </div>
         </div> -->
         <div v-show="isBannerShown" class="fixed inset-0 w-screen h-screen flex items-center justify-center bg-opacity-0">
-            <div class="relativeshadow-lg w-full max-w-2xl mx-4 my-8">
-                <span class="absolute top-0 right-0 cursor-pointer p-4" @click="isBannerShown = false">x</span>
-                <div class="p-4">
-                    <iframe class="w-full" :src="previewUrl" frameborder="0"></iframe>
+            <div class="relativeshadow-lg w-screen">
+                <span class="absolute cursor-pointer p-4" @click="isBannerShown = false">x</span>
+                <div>
+                    <iframe class="w-screen h-screen" :src="previewUrl" frameborder="0"></iframe>
                 </div>
             </div>
         </div>
@@ -112,7 +116,7 @@ export default {
             previewUrl: '',
             quarter: 0,
             teamA: {
-                name: '',
+                name: 'Uzumaki Naruto Gibran',
                 picture: '',
                 score: 0,
                 foul: 0,
@@ -533,19 +537,37 @@ div.wrapper-score {
 }
 
 .label-score {
-    width: 31%;
-    background: linear-gradient(180deg,
-            var(--light1) 20%,
-            var(--light2) 96%);
+    width: 39%;
+    background: linear-gradient(180deg, var(--light1) 20%, var(--light2) 96%);
     color: var(--lightcolor);
     font-weight: normal;
     text-transform: uppercase;
     letter-spacing: 2px;
     text-align: center;
     border-radius: 10px 10px 0 0;
-    padding: 27px 10px 7px;
-    font-size: 26pt;
+    padding: 0;
+    font-size: 20pt;
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 73px;
+    padding-top: 17px;
+    line-height: normal;
+
+}
+
+.label-score div {
+    height: auto;
+    overflow: hidden;
+    display: flex;
+    width: 100%;
+    padding: 0 10px 0;
+    display: flex;
+    align-items: start;
+    justify-content: center;
+    max-height: 100%;
+    box-sizing: border-box;
 }
 
 .label-score:after {
@@ -680,7 +702,7 @@ div.wrapper-score {
     font-size: 56pt;
     border: 5px solid #e1e1e1;
     border-radius: 15px;
-    padding: 10px 20px 1px;
+    padding: 2px 20px 4px;
     width: 34%;
     text-align: center;
 }

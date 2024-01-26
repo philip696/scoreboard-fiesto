@@ -9,13 +9,39 @@
             <div class="flex flex-col rounded bg-blue-300 w-3/4 p-2">
                 <span class="text-4xl font-bold text-center w-full mb-4">Configuration</span>
                 <div class="flex w-full mb-2">
-                    <div class="w-1/2 pr-2">
+                    <div class="w-1/3 pr-2">
                         <label class="block text-gray-700 text-sm font-bold mb-2" for="rabbitmq_host">
                             RabbbitMQ Host
                         </label>
                         <input v-model="config.rabbitmq_host"
                             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             id="rabbitmq_host" type="text">
+                    </div>
+                    <div class="w-1/3">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="rabbitmq_username">
+                            RabbbitMQ Username
+                        </label>
+                        <input v-model="config.rabbitmq_username"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            id="rabbitmq_username" type="text">
+                    </div>
+                    <div class="w-1/3 pl-2">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="rabbitmq_password">
+                            RabbitMQ Password
+                        </label>
+                        <input v-model="config.rabbitmq_password"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            id="rabbitmq_password" type="password">
+                    </div>
+                </div>
+                <div class="flex w-full mb-2">
+                    <div class="w-1/2 pr-2">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="event_id">
+                            Event ID
+                        </label>
+                        <input v-model="config.event_id"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            id="event_id" type="text">
                     </div>
                     <div class="w-1/2 pl-2">
                         <label class="block text-gray-700 text-sm font-bold mb-2" for="field_id">
@@ -24,24 +50,6 @@
                         <input v-model="config.field_id"
                             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             id="field_id" type="text">
-                    </div>
-                </div>
-                <div class="flex w-full mb-2">
-                    <div class="w-1/2 pr-2">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="rabbitmq_username">
-                            RabbbitMQ Username
-                        </label>
-                        <input v-model="config.rabbitmq_username"
-                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                            id="rabbitmq_username" type="text">
-                    </div>
-                    <div class="w-1/2 pl-2">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="rabbitmq_password">
-                            RabbitMQ Password
-                        </label>
-                        <input v-model="config.rabbitmq_password"
-                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                            id="rabbitmq_password" type="password">
                     </div>
                 </div>
                 <div class="mb-2">
@@ -136,8 +144,6 @@
 
 <script lang="ts">
 import { invoke } from '@tauri-apps/api/tauri';
-import { WebviewWindow } from '@tauri-apps/api/window';
-import { window } from '@tauri-apps/api';
 
 export default {
     data() {
@@ -146,6 +152,7 @@ export default {
                 rabbitmq_host: '',
                 rabbitmq_username: '',
                 rabbitmq_password: '',
+                event_id: '',
                 field_id: '',
                 scorer_url: '',
                 dark_statistic_url: '',
@@ -161,11 +168,11 @@ export default {
     },
     methods: {
         async saveConfig() {
-            console.log('saving')
             let result = await invoke('save_config', {
                 rabbitmqHost: this.config.rabbitmq_host,
                 rabbitmqUsername: this.config.rabbitmq_username,
                 rabbitmqPassword: this.config.rabbitmq_password,
+                eventId: this.config.event_id,
                 fieldId: this.config.field_id,
                 scorerUrl: this.config.scorer_url,
                 darkStatisticUrl: this.config.dark_statistic_url,

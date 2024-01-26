@@ -1,21 +1,25 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use dirs;
-use lapin::{options::BasicPublishOptions, BasicProperties, Connection, ConnectionProperties};
+use lapin::options::BasicPublishOptions;
+use lapin::{BasicProperties, Connection, ConnectionProperties};
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::{self, Error, Read};
-use std::path::{Path, PathBuf};
+use serialport::SerialPort;
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, State};
 use tokio::time::{sleep, Duration};
+
+mod rabbitmq;
+mod serial;
+mod utils;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct AppState {
     rabbitmq_host: String,
     rabbitmq_username: String,
     rabbitmq_password: String,
+    event_id: String,
     field_id: String,
     scorer_url: String,
     dark_statistic_url: String,
@@ -28,73 +32,83 @@ struct ConfigState {
     file_path: String,
 }
 
-fn ensure_file_exists(file_path: &Path) -> Result<(), Error> {
-    if !file_path.exists() {
-        File::create(file_path)?;
-        println!("File created: {}", file_path.display());
-    } else {
-        println!("File already exists: {}", file_path.display());
-    }
-    Ok(())
-}
-
-fn read_file(file_path: &Path) -> io::Result<String> {
-    let mut file = File::open(file_path)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-    Ok(contents)
-}
-
-fn get_absolute_path_in_home(relative_path: &str) -> Result<PathBuf, String> {
-    let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
-    let absolute_path = home_dir.join(relative_path);
-    Ok(absolute_path)
-}
-
-async fn produce_to_rabbitmq(
-    host: String,
-    username: String,
-    password: String,
-    routing_key: String,
-    message: String,
-) -> Result<(), String> {
-    let amqp_uri = format!("amqp://{}:{}@{}:5672", username, password, host); //state.lock().unwrap().rabbitmq_host.to_string(); // Replace with your URI
-
-    // Connect to the AMQP server
-    let conn = Connection::connect(&amqp_uri, ConnectionProperties::default())
-        .await
-        .expect("Failed to connect to AMQP server");
-
-    let channel = conn
-        .create_channel()
-        .await
-        .expect("Failed to create a channel");
-
-    channel
-        .basic_publish(
-            "amq.topic",  // Exchange
-            &routing_key, // Routing key (queue name)
-            BasicPublishOptions::default(),
-            &message.as_bytes().to_vec(),
-            BasicProperties::default(),
-        )
-        .await
-        .map_err(|e| e.to_string())
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    Ok(())
+#[tauri::command]
+fn list_serial_ports() -> Result<Vec<String>, String> {
+    serial::list_ports()
 }
 
 #[tauri::command]
+fn connect_serial_port(
+    port_name: String,
+    port_map: State<serial::PortMap>,
+) -> Result<String, String> {
+    match serial::connect_port(&port_name, &port_map) {
+        Ok(_) => Ok(format!("Successfully connected to {}", port_name)),
+        Err(e) => Err(e),
+    }
+}
+
+#[tauri::command]
+fn disconnect_serial_port(port_map: State<serial::PortMap>) -> Result<String, String> {
+    serial::disconnect_all_ports(&port_map)
+        .map(|_| "Successfully disconnected from all ports".to_string())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn send_serial_data(
+    port_name: String,
+    data: Vec<u8>,
+    port_map: State<serial::PortMap>,
+) -> Result<(), String> {
+    serial::send_data(&port_name, &data, &port_map)
+}
+
+// async fn produce_to_rabbitmq(
+//     host: String,
+//     username: String,
+//     password: String,
+//     routing_key: String,
+//     message: String,
+// ) -> Result<(), String> {
+//     let amqp_uri = format!("amqp://{}:{}@{}:5672", username, password, host); //state.lock().unwrap().rabbitmq_host.to_string(); // Replace with your URI
+
+//     // Connect to the AMQP server
+//     let conn = Connection::connect(&amqp_uri, ConnectionProperties::default())
+//         .await
+//         .expect("Failed to connect to AMQP server");
+
+//     let channel = conn
+//         .create_channel()
+//         .await
+//         .expect("Failed to create a channel");
+
+//     channel
+//         .basic_publish(
+//             "amq.topic",  // Exchange
+//             &routing_key, // Routing key (queue name)
+//             BasicPublishOptions::default(),
+//             &message.as_bytes().to_vec(),
+//             BasicProperties::default(),
+//         )
+//         .await
+//         .map_err(|e| e.to_string())
+//         .map_err(|e| e.to_string())
+//         .unwrap();
+
+//     Ok(())
+// }
+
+#[tauri::command]
 fn update_time(time: String, state: tauri::State<'_, Arc<Mutex<AppState>>>) -> Result<(), String> {
-    let host = state.lock().unwrap().rabbitmq_host.to_string();
-    let username = state.lock().unwrap().rabbitmq_username.to_string();
-    let password = state.lock().unwrap().rabbitmq_password.to_string();
-    let routing_key = format!("basket.event.time.{}", state.lock().unwrap().field_id);
+    let state = state.lock().unwrap();
+    let host = state.rabbitmq_host.clone();
+    let username = state.rabbitmq_username.clone();
+    let password = state.rabbitmq_password.clone();
+    let routing_key = format!("sportkit.basket.{}.{}.time", state.event_id, state.field_id);
 
     tokio::spawn(async move {
-        let _ = produce_to_rabbitmq(host, username, password, routing_key, time).await;
+        let _ = rabbitmq::produce_to_rabbitmq(host, username, password, routing_key, time).await;
     });
 
     Ok(())
@@ -105,13 +119,17 @@ fn update_quarter(
     quarter: String,
     state: tauri::State<'_, Arc<Mutex<AppState>>>,
 ) -> Result<(), String> {
-    let host = state.lock().unwrap().rabbitmq_host.to_string();
-    let username = state.lock().unwrap().rabbitmq_username.to_string();
-    let password = state.lock().unwrap().rabbitmq_password.to_string();
-    let routing_key = format!("basket.event.quarter.{}", state.lock().unwrap().field_id);
+    let state = state.lock().unwrap();
+    let host = state.rabbitmq_host.clone();
+    let username = state.rabbitmq_username.clone();
+    let password = state.rabbitmq_password.clone();
+    let routing_key = format!(
+        "sportkit.basket.{}.{}.quarter",
+        state.event_id, state.field_id
+    );
 
     tokio::spawn(async move {
-        let _ = produce_to_rabbitmq(host, username, password, routing_key, quarter).await;
+        let _ = rabbitmq::produce_to_rabbitmq(host, username, password, routing_key, quarter).await;
     });
 
     Ok(())
@@ -123,6 +141,7 @@ fn save_config(
     rabbitmq_host: String,
     rabbitmq_username: String,
     rabbitmq_password: String,
+    event_id: String,
     field_id: String,
     scorer_url: String,
     dark_statistic_url: String,
@@ -136,6 +155,7 @@ fn save_config(
     app_state.rabbitmq_host = rabbitmq_host;
     app_state.rabbitmq_username = rabbitmq_username;
     app_state.rabbitmq_password = rabbitmq_password;
+    app_state.event_id = event_id;
     app_state.field_id = field_id;
     app_state.scorer_url = scorer_url;
     app_state.dark_statistic_url = dark_statistic_url;
@@ -143,9 +163,9 @@ fn save_config(
     app_state.man_of_the_match_url = man_of_the_match_url;
     app_state.top_player_url = top_player_url;
     let relative_path = config_state.lock().unwrap().file_path.to_string();
-    let file_path = get_absolute_path_in_home(&relative_path).unwrap();
+    let file_path = utils::get_absolute_path_in_home(&relative_path).unwrap();
 
-    let _ = ensure_file_exists(&file_path);
+    let _ = utils::ensure_file_exists(&file_path);
 
     match serde_json::to_string(&*app_state) {
         Ok(serialized) => match std::fs::write(file_path, &serialized) {
@@ -198,9 +218,9 @@ async fn main() {
         file_path: "BasketScoreboard/settings.json".to_string(),
     };
 
-    let file_path = get_absolute_path_in_home(&config_state.file_path).unwrap();
+    let file_path = utils::get_absolute_path_in_home(&config_state.file_path).unwrap();
 
-    let app_state = match read_file(&file_path) {
+    let app_state = match utils::read_file(&file_path) {
         Ok(contents) => match serde_json::from_str::<AppState>(&contents) {
             Ok(data) => {
                 println!("Deserialized data: {:?}", data);
@@ -212,6 +232,7 @@ async fn main() {
                     rabbitmq_host: "initial_host".to_string(),
                     rabbitmq_username: "initial_username".to_string(),
                     rabbitmq_password: "initial_password".to_string(),
+                    event_id: "initial_event_id".to_string(),
                     field_id: "initial_field_id".to_string(),
                     scorer_url: "initial_scorer_url".to_string(),
                     dark_statistic_url: "initial_dark_statistic_url".to_string(),
@@ -227,6 +248,7 @@ async fn main() {
                 rabbitmq_host: "initial_host".to_string(),
                 rabbitmq_username: "initial_username".to_string(),
                 rabbitmq_password: "initial_password".to_string(),
+                event_id: "initial_event_id".to_string(),
                 field_id: "initial_field_id".to_string(),
                 scorer_url: "initial_scorer_url".to_string(),
                 dark_statistic_url: "initial_dark_statistic_url".to_string(),
@@ -246,9 +268,16 @@ async fn main() {
             let state = Arc::new(Mutex::new(config_state));
             state
         })
+        .manage(Arc::new(Mutex::new(
+            HashMap::<String, Box<dyn SerialPort>>::new(),
+        )))
         .invoke_handler(tauri::generate_handler![
             update_time,
             update_quarter,
+            list_serial_ports,
+            connect_serial_port,
+            disconnect_serial_port,
+            send_serial_data,
             save_config,
             get_config,
             open_config,

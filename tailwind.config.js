@@ -11,11 +11,9 @@ export default {
   theme: {
     fontFamily: {
       basementGrotesque: ["BasementGrotesque", "sans-serif"],
+      martianMono: ["MartianMono", "sans-serif"],
     },
     extend: {
-      fontFamily: {
-        basementGrotesque: ["BasementGrotesque", "sans-serif"],
-      },
       colors: {
         light1: "var(--light1)",
         light2: "var(--light2)",

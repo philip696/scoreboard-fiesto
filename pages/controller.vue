@@ -1,6 +1,6 @@
 <template>
     <div class="fixed w-screen h-screen bg-slate-400">
-        <div class="flex flex-col items-center justify-center h-screen">
+        <div class="flex flex-col items-center justify-center h-screen w-screen">
             <div class="flex items-center justify-between">
                 <TeamController teamname="teamA" :info="teamA"
                     class="flex flex-col items-center justify-center h-full w-1/3" />
@@ -74,8 +74,27 @@
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Show Top
                     Player</button>
             </div>
-            <div @click="openConfig" class="flex items-center ml-10 w-full">
-                <Icon name="mynaui:config" class="text-3xl hover:cursor-pointer hover:bg-blue-400" />
+            <div class="flex justify-between items-center ml-10 w-full px-8">
+                <Icon @click="openConfig" name="mynaui:config" class="text-3xl hover:cursor-pointer hover:bg-blue-400" />
+                <div class="flex">
+                    <select
+                        class="block appearance-none bg-white border border-gray-400 hover:border-gray-500 px-4 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
+                        v-model="selectedPort" :disabled="isSerialConnected">
+                        <option value="">PORT?</option>
+                        <option v-for="port in serialPorts" :value="port">{{ port }}</option>
+                    </select>
+                    <button @click="fetchSerialPorts"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Refresh</button>
+                    <button v-if="!isSerialConnected" @click="serialConnect"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Connect</button>
+                    <button v-else @click="serialDisconnect"
+                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-2 rounded">Disconnect</button>
+                </div>
+            </div>
+            <div v-show="isNotifShown"
+                class="absolute top-8 py-8 shadow-lg text-2xl font-bold text-center w-full transition ease-in-out delay-150 "
+                :class="{ 'opacity-100': isNotifShown, 'opacity-0': !isNotifShown, 'bg-green-300': notificationStatus == 'success', 'bg-red-300': notificationStatus != 'success' }">
+                <span class="text-2xl font-bold text-center w-full">{{ notificationMessage }}</span>
             </div>
         </div>
     </div>
@@ -117,11 +136,20 @@ export default {
             previewUrl: '',
             isBannerShown: false,
             listUrl: {
-            } as PreviewUrl
+            } as PreviewUrl,
+            serialPorts: [] as string[],
+            selectedPort: '',
+            isSerialConnected: false,
+            isNotifShown: false,
+            notificationStatus: '' as 'success' | 'failed',
+            notificationMessage: ''
         }
     },
     mounted() {
+        this.fetchSerialPorts();
+
         listen('timer_event', (event: any) => {
+            console.log('timer_event', event);
             this.time = event.payload.value
         });
 
@@ -177,6 +205,51 @@ export default {
         },
         async updateQuarter() {
             emit('quarter_event', { quarter: this.quarter })
+        },
+        async fetchSerialPorts() {
+            try {
+                const ports = await invoke('list_serial_ports') as string[];
+                this.serialPorts = ports;
+                console.log(ports);  // Do something with the list of ports
+            } catch (error) {
+                console.error('Failed to fetch serial ports:', error);
+            }
+        },
+        async serialConnect() {
+            let status = await invoke('connect_serial_port', { portName: this.selectedPort })
+                .then(response => {
+                    // Success notification
+                    this.isSerialConnected = true;
+                    this.showNotif('success', 'Serial port connected');
+                })
+                .catch(error => {
+                    // Error notification
+                    this.showNotif('failed', 'Failed to connect serial port');
+                });
+            console.log(status);
+        },
+        async serialDisconnect() {
+            let status = await invoke('disconnect_serial_port')
+                .then(response => {
+                    // Success notification
+                    console.log(response);
+                    this.isSerialConnected = false;
+                    this.showNotif('success', 'Serial port disconnected');
+                })
+                .catch(error => {
+                    // Error notification
+                    console.log(error);
+                    this.showNotif('failed', 'Failed to disconnect serial port');
+                });
+            console.log(status);
+        },
+        showNotif(status: 'success' | 'failed', message: string) {
+            this.notificationStatus = status;
+            this.notificationMessage = message;
+            this.isNotifShown = true;
+            setTimeout(() => {
+                this.isNotifShown = false;
+            }, 2000);
         }
     }
 }
