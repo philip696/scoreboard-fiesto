@@ -1,6 +1,6 @@
 <template>
     <div class="fixed w-screen h-screen bg-slate-400">
-        <div data-tauri-drag-region class="flex items-center justify-end h-[5%] w-full bg-slate-300">
+        <div data-tauri-drag-region class="flex items-center justify-end h-[5%] w-full bg-slate-300 hover:cursor-move">
             <span data-tauri-drag-region class="w-full text-center text-2xl font-bold">Controller</span>
             <button class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 rounded"
                 @click="closeApp">x</button>
