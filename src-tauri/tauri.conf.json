@@ -75,8 +75,8 @@
         "title": "Sportkit Scoreboard"
       },
       {
-        "width": 960,
-        "height": 640,
+        "width": 1080,
+        "height": 840,
         "center": true,
         "visible": false,
         "resizable": false,

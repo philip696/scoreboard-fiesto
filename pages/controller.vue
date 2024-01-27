@@ -1,10 +1,11 @@
 <template>
     <div class="fixed w-screen h-screen bg-slate-400">
-        <div class="flex items-center justify-end w-full bg-slate-300">
+        <div data-tauri-drag-region class="flex items-center justify-end h-[5%] w-full bg-slate-300">
+            <span data-tauri-drag-region class="w-full text-center text-2xl font-bold">Controller</span>
             <button class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 rounded"
                 @click="closeApp">x</button>
         </div>
-        <div class="flex flex-col items-center justify-center h-screen w-screen">
+        <div class="flex flex-col items-center justify-center h-[95%] p-8 w-full">
             <div class="flex items-center justify-between h-full w-full">
                 <TeamController defaultname="Terang" teamname="teamA" :info="teamA"
                     class="flex flex-col items-center justify-center h-full w-1/3" />
@@ -130,8 +131,8 @@
 <script lang="ts">
 import { emit, listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/tauri';
-import { WebviewWindow } from '@tauri-apps/api/window';
 import type { TeamInfo } from '~/types/TeamInfo';
+import { getCurrent } from '@tauri-apps/api/window';
 
 type PreviewUrl = {
     'scorer_url': string,
@@ -251,6 +252,11 @@ export default {
 
             return strSeconds;
         },
+        windowName() {
+            const window = getCurrent();
+            const windowName = window.label;
+            return windowName;
+        }
     },
     methods: {
         async startTimer() {

@@ -196,7 +196,6 @@ fn open_config(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 fn end_config(app: AppHandle) -> Result<(), String> {
-    // let mut app_state = app_state.lock().unwrap();
     let config_window = app.get_window("configurationpage").unwrap();
     let main_window = app.get_window("indexpage").unwrap();
     let controller_window = app.get_window("controllerpage").unwrap();
@@ -210,15 +209,6 @@ fn end_config(app: AppHandle) -> Result<(), String> {
 fn get_config(state: tauri::State<'_, Arc<Mutex<AppState>>>) -> Result<AppState, String> {
     let state = state.lock().map_err(|e| e.to_string())?;
     Ok(state.clone())
-}
-
-#[tauri::command]
-fn close_all_windows(app: AppHandle) -> Result<(), String> {
-    let main_window = app.get_window("indexpage").unwrap();
-    let controller_window = app.get_window("controllerpage").unwrap();
-    main_window.hide().unwrap();
-    controller_window.hide().unwrap();
-    Ok(())
 }
 
 #[tauri::command]
