@@ -212,6 +212,20 @@ fn get_config(state: tauri::State<'_, Arc<Mutex<AppState>>>) -> Result<AppState,
     Ok(state.clone())
 }
 
+#[tauri::command]
+fn close_all_windows(app: AppHandle) -> Result<(), String> {
+    let main_window = app.get_window("indexpage").unwrap();
+    let controller_window = app.get_window("controllerpage").unwrap();
+    main_window.hide().unwrap();
+    controller_window.hide().unwrap();
+    Ok(())
+}
+
+#[tauri::command]
+fn close_all_processes() {
+    std::process::exit(0);
+}
+
 #[tokio::main]
 async fn main() {
     let config_state = ConfigState {
@@ -281,13 +295,19 @@ async fn main() {
             save_config,
             get_config,
             open_config,
-            end_config
+            end_config,
+            close_all_processes
         ])
         .setup(|app| {
             let splashscreen_window = app.get_window("splashscreen").unwrap();
-            // let controller_window = app.get_window("controllerpage").unwrap();
+            let controller_window = app.get_window("controllerpage").unwrap();
             // let main_windows = app.get_window("indexpage").unwrap();
             let configuration_windows = app.get_window("configurationpage").unwrap();
+
+            controller_window.listen("tauri://close-requested", |_| {
+                println!("close requested");
+                // std::process::exit(0);
+            });
 
             tauri::async_runtime::spawn(async move {
                 sleep(Duration::from_secs(1)).await;

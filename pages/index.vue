@@ -48,8 +48,11 @@
                     </div>
                 </div>
                 <div class="timer font-martianMono">
-                    <div class="timer quarter font-basementGrotesque">
+                    <div v-if="!isTimeout" class="timer quarter font-basementGrotesque">
                         <div class="label-quarter">QUARTER</div>{{ quarter }}
+                    </div>
+                    <div v-else class="timer quarter font-basementGrotesque">
+                        <div class="label-quarter">TIMEOUT</div>{{ formatedTimeout }}
                     </div>
                     {{ formatedTime }}
                 </div>
@@ -105,18 +108,19 @@ import { doc, updateDoc } from 'firebase/firestore';
 export default {
     data() {
         return {
-            time: 0,
-            timeout: 0,
+            time: 0 as number,
+            timeout: 0 as number,
             timer: null as any,
             timerTimeout: null as any,
-            updateCounter: 0,
-            isRunning: false,
-            isTimeout: false,
-            isBannerShown: false,
-            previewUrl: '',
-            quarter: 0,
+            timerUpdateCounter: 0 as number,
+            timeoutUpdateCounter: 0 as number,
+            isRunning: false as boolean,
+            isTimeout: false as boolean,
+            isBannerShown: false as boolean,
+            previewUrl: '' as string,
+            quarter: 0 as number,
             teamA: {
-                name: 'Uzumaki Naruto Gibran',
+                name: '',
                 picture: '',
                 score: 0,
                 foul: 0,
@@ -150,6 +154,41 @@ export default {
         await listen('quarter_event', (event: any) => {
             this.quarter = event.payload.quarter;
             invoke('update_quarter', { quarter: this.quarter })
+        })
+
+        await listen('quarter_step_event', (event: any) => {
+            switch (event.payload.step) {
+                case 'up':
+                    this.quarter += 1;
+                    break;
+
+                case 'down':
+                    this.quarter = this.quarter - 1 < 0 ? 0 : this.quarter - 1;
+                    break;
+
+                default:
+                    break;
+            }
+        })
+
+        await listen('change_time_event', (event: any) => {
+            this.time = this.time + (event.payload.value * 1000);
+        })
+
+        await listen('team_name_event', (event: any) => {
+            console.log(event.payload)
+            switch (event.payload.team) {
+                case 'teamA':
+                    this.teamA.name = event.payload.name;
+                    break;
+
+                case 'teamB':
+                    this.teamB.name = event.payload.name;
+                    break;
+
+                default:
+                    break;
+            }
         })
 
         await listen('score_step_event', (event: any) => {
@@ -289,6 +328,14 @@ export default {
                 })
             },
             deep: true
+        },
+        quarter: {
+            handler(newVal, oldVal) {
+                console.log(newVal, oldVal)
+                emit('quarter_event', {
+                    quarter: this.quarter
+                })
+            },
         }
     },
     computed: {
@@ -307,7 +354,7 @@ export default {
                 const milliseconds = (this.time % 1000) / 10;
                 const seconds = Math.floor(this.time / 1000) % 60;
                 const minutes = Math.floor(this.time / (1000 * 60)) % 60;
-                return `${seconds}.${milliseconds}`; //minutes + ":" + seconds;
+                return `${seconds}.${milliseconds.toFixed(0)}`; //minutes + ":" + seconds;
             }
         },
         formatedTimeout() {
@@ -319,7 +366,7 @@ export default {
             const strSeconds = String((seconds < 10) ? "0" + seconds.toFixed(0) : seconds.toFixed(0));
             const strMilliseconds = String((milliseconds < 10) ? "0" + milliseconds.toFixed(0) : milliseconds.toFixed(0));
 
-            return strMinutes + ":" + strSeconds;
+            return strSeconds;
         },
         quarterName() {
             switch (String(this.quarter)) {
@@ -348,9 +395,9 @@ export default {
                 this.time = initialTime;
 
                 this.timer = setInterval(() => {
-                    this.updateCounter += 1;
-                    if (this.updateCounter >= 10) {
-                        this.updateCounter = 0;
+                    this.timerUpdateCounter += 1;
+                    if (this.timerUpdateCounter >= 10) {
+                        this.timerUpdateCounter = 0;
                         invoke('update_time', { time: this.formatedTime });
                         emit('timer_event', { value: this.time });
                     }
@@ -373,11 +420,15 @@ export default {
                 this.isTimeout = true;
                 this.timeout = initialTime;
                 this.timerTimeout = setInterval(() => {
-                    console.log(this.timeout)
+                    this.timeoutUpdateCounter += 1;
+                    if (this.timeoutUpdateCounter >= 10) {
+                        this.timeoutUpdateCounter = 0;
+                        emit('timeout_event', { value: this.timeout });
+                    }
+                    this.timeout -= 10;
                     if (this.timeout <= 0) {
                         this.stopTimeout();
-                    } else {
-                        this.timeout -= 10;
+                        emit('timeout_event', { value: this.timeout });
                     }
                 }, 10);
             }
@@ -806,7 +857,7 @@ img.light-right {
     transform: translate(-50%);
     bottom: 100%;
     font-size: 33pt;
-    width: 70px;
+    width: 91px;
     text-align: center;
     margin-bottom: 20px;
     padding: 9px 0 0;

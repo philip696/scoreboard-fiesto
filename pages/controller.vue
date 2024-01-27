@@ -1,77 +1,104 @@
 <template>
     <div class="fixed w-screen h-screen bg-slate-400">
+        <div class="flex items-center justify-end w-full bg-slate-300">
+            <button class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 rounded"
+                @click="closeApp">x</button>
+        </div>
         <div class="flex flex-col items-center justify-center h-screen w-screen">
-            <div class="flex items-center justify-between">
-                <TeamController teamname="teamA" :info="teamA"
+            <div class="flex items-center justify-between h-full w-full">
+                <TeamController defaultname="Terang" teamname="teamA" :info="teamA"
                     class="flex flex-col items-center justify-center h-full w-1/3" />
                 <div class="flex flex-col items-center justify-center h-full w-1/3">
                     <span class="text-3xl font-bold mb-3">CONTROLLER</span>
-                    <div class="relative inline-block py-2 mb-2">
-                        <select @change="updateQuarter"
-                            class="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
-                            v-model="quarter" placeholder="Quarter">
-                            <option disabled value="0">Quarter</option>
-                            <option value="1">
-                                Quarter 1
-                            </option>
-                            <option value="2">
-                                Quarter 2
-                            </option>
-                            <option value="3">
-                                Quarter 3
-                            </option>
-                            <option value="4">
-                                Quarter 4
-                            </option>
-                            <option value="5">
-                                Overtime
-                            </option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                <path d="M5.5 7L10 11.5 14.5 7z" />
-                            </svg>
-                        </div>
+                    <div class="flex items-center justify-center py-2 mb-2">
+                        <button @click="emitEvent('quarter_step_event', { step: 'down' })"
+                            class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 rounded">
+                            -
+                        </button>
+                        <span class="text-3xl font-bold mx-2 font-martianMono">Q{{ quarter }}</span>
+                        <button @click="emitEvent('quarter_step_event', { step: 'up' })"
+                            class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 rounded">
+                            +
+                        </button>
                     </div>
-                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mb-2 rounded"
+                    <button v-if="!isRunning"
+                        class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 mb-2 rounded"
                         @click="startTimer">
                         Start Timer
                     </button>
-                    <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 mb-2 rounded"
+                    <button v-else
+                        class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 mb-2 rounded"
                         @click="stopTimer">
                         Stop Timer
                     </button>
-                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mb-2 rounded"
+                    <button v-if="!isTimeout"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 mb-2 rounded"
                         @click="startTimerTimeout">
                         Start Timeout
                     </button>
-                    <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 mb-2 rounded"
+                    <button v-else class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 mb-2 rounded"
                         @click="stopTimerTimeout">
                         Stop Timeout
                     </button>
 
-                    <div class="flex items-center justify-center">
-                        <h1 class="text-3xl font-bold underline">
+                    <div class="flex flex-col items-center justify-center mt-12">
+                        <span v-if="isTimeout" class="text-3xl font-bold font-martianMono mb-8">
+                            {{ formatedTimeout }}
+                        </span>
+                        <div class="flex items-center justify-around w-full mb-2">
+                            <button @click="() => { emitSumEvent('change_time_event', { value: 60 }); }"
+                                class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 rounded w-12 h-12">
+                                +60
+                            </button>
+                            <button @click="() => { emitSumEvent('change_time_event', { value: 10 }); }"
+                                class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 rounded w-12 h-12">
+                                +10
+                            </button>
+                            <button @click="() => { emitSumEvent('change_time_event', { value: 1 }); }"
+                                class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 rounded w-12 h-12">
+                                +1
+                            </button>
+                        </div>
+                        <span class="text-3xl font-bold font-martianMono">
                             {{ formatedTime }}
-                        </h1>
+                        </span>
+                        <div class="flex items-center justify-around w-full mt-2">
+                            <button @click="() => { emitSumEvent('change_time_event', { value: -60 }); }"
+                                class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold p-2 rounded w-12 h-12">
+                                -60
+                            </button>
+                            <button @click="() => { emitSumEvent('change_time_event', { value: -10 }); }"
+                                class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold p-2 rounded w-12 h-12">
+                                -10
+                            </button>
+                            <button @click="() => { emitSumEvent('change_time_event', { value: -1 }); }"
+                                class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold p-2 rounded w-12 h-12">
+                                -1
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <TeamController teamname="teamB" :info="teamB"
+                <TeamController defaultname="Gelap" teamname="teamB" :info="teamB"
                     class="flex flex-col items-center justify-center h-full w-1/3" />
             </div>
             <div class="flex items-center justify-around">
                 <button @click="showBanner('scorer_url')"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Show Scorer</button>
+                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                    Scorer</button>
                 <button @click="showBanner('dark_statistic_url')"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Show Statistic
+                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                    Statistic
                     (Dark)</button>
                 <button @click="showBanner('light_statistic_url')"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Show Statistic
+                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                    Statistic
                     (Light)</button>
                 <button @click="showBanner('man_of_the_match_url')"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Show MOTM</button>
+                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                    MOTM</button>
                 <button @click="showBanner('top_player_url')"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Show Top
+                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                    Top
                     Player</button>
             </div>
             <div class="flex justify-between items-center ml-10 w-full px-8">
@@ -84,11 +111,11 @@
                         <option v-for="port in serialPorts" :value="port">{{ port }}</option>
                     </select>
                     <button @click="fetchSerialPorts"
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Refresh</button>
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 m-2 rounded">Refresh</button>
                     <button v-if="!isSerialConnected" @click="serialConnect"
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 m-2 rounded">Connect</button>
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 m-2 rounded">Connect</button>
                     <button v-else @click="serialDisconnect"
-                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-2 rounded">Disconnect</button>
+                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 m-2 rounded">Disconnect</button>
                 </div>
             </div>
             <div v-show="isNotifShown"
@@ -117,53 +144,89 @@ type PreviewUrl = {
 export default {
     data() {
         return {
-            time: 0,
+            time: 0 as number,
+            lastTimeUpdate: null as number | null,
+            isRunning: false as boolean,
+            timeout: 0 as number,
+            lastTimeoutUpdate: null as number | null,
+            isTimeout: false as boolean,
+            minimumUpdatePeriod: 200 as number,
             teamA: {
-                name: 'Tim A',
+                name: 'Terang',
                 picture: '',
                 score: 0,
                 foul: 0,
                 timeout: 0
             } as TeamInfo,
             teamB: {
-                name: 'Tim B',
+                name: 'Gelap',
                 picture: '',
                 score: 0,
                 foul: 0,
                 timeout: 0
             } as TeamInfo,
-            quarter: 0,
-            previewUrl: '',
-            isBannerShown: false,
+            quarter: 0 as number,
+            previewUrl: '' as string,
+            isBannerShown: false as boolean,
             listUrl: {
             } as PreviewUrl,
             serialPorts: [] as string[],
-            selectedPort: '',
-            isSerialConnected: false,
-            isNotifShown: false,
+            selectedPort: '' as string,
+            isSerialConnected: false as boolean,
+            isNotifShown: false as boolean,
             notificationStatus: '' as 'success' | 'failed',
-            notificationMessage: ''
+            notificationMessage: '' as string
         }
     },
     mounted() {
         this.fetchSerialPorts();
 
         listen('timer_event', (event: any) => {
-            console.log('timer_event', event);
-            this.time = event.payload.value
+            this.time = event.payload.value;
+            this.isRunning = true;
+            this.lastTimeUpdate = Date.now();
+        });
+
+        listen('timeout_event', (event: any) => {
+            // console.log(event.payload.value)
+            this.timeout = event.payload.value;
+            this.isTimeout = true;
+            this.lastTimeoutUpdate = Date.now();
         });
 
         listen('team_a_event', (event: any) => {
             this.teamA = event.payload.teamA
+            if (this.teamA.name == '') {
+                this.teamA.name = 'Gelap';
+            }
         });
 
         listen('team_b_event', (event: any) => {
             this.teamB = event.payload.teamB
+            if (this.teamB.name == '') {
+                this.teamB.name = 'Terang';
+            }
+        });
+
+        listen('quarter_event', (event: any) => {
+            this.quarter = event.payload.quarter;
         });
 
         invoke('get_config').then((state: any) => {
             this.listUrl = state;
         })
+
+        // Periodically check if data is still coming
+        setInterval(() => {
+            if (this.lastTimeUpdate && (Date.now() - this.lastTimeUpdate > this.minimumUpdatePeriod)) {
+                this.isRunning = false;
+                this.lastTimeUpdate = null;
+            }
+            if (this.lastTimeoutUpdate && (Date.now() - this.lastTimeoutUpdate > this.minimumUpdatePeriod)) {
+                this.isTimeout = false;
+                this.lastTimeoutUpdate = null;
+            }
+        }, this.minimumUpdatePeriod);
     },
     computed: {
         formatedTime() {
@@ -176,11 +239,21 @@ export default {
             const strMilliseconds = String((milliseconds < 10) ? "0" + milliseconds.toFixed(0) : milliseconds.toFixed(0));
 
             return strMinutes + ":" + strSeconds + "." + strMilliseconds;
-        }
+        },
+        formatedTimeout() {
+            const milliseconds = (this.timeout % 1000) / 10;
+            const seconds = Math.floor(this.timeout / 1000) % 60;
+            const minutes = Math.floor(this.timeout / (1000 * 60)) % 60;
+
+            const strMinutes = String((minutes < 10) ? "0" + minutes.toFixed(0) : minutes.toFixed(0));
+            const strSeconds = String((seconds < 10) ? "0" + seconds.toFixed(0) : seconds.toFixed(0));
+            const strMilliseconds = String((milliseconds < 10) ? "0" + milliseconds.toFixed(0) : milliseconds.toFixed(0));
+
+            return strSeconds;
+        },
     },
     methods: {
         async startTimer() {
-            console.log(this.time)
             if (this.time > 0) {
                 emit('start_timer_event', { initialTime: this.time })
             } else {
@@ -200,7 +273,6 @@ export default {
             emit('stop_timeout_event')
         },
         async showBanner(key: "scorer_url" | "dark_statistic_url" | "light_statistic_url" | "man_of_the_match_url" | "top_player_url") {
-            console.log(this.listUrl[key]);
             emit('show_banner', { url: this.listUrl[key] });
         },
         async updateQuarter() {
@@ -210,7 +282,6 @@ export default {
             try {
                 const ports = await invoke('list_serial_ports') as string[];
                 this.serialPorts = ports;
-                console.log(ports);  // Do something with the list of ports
             } catch (error) {
                 console.error('Failed to fetch serial ports:', error);
             }
@@ -243,13 +314,24 @@ export default {
                 });
             console.log(status);
         },
-        showNotif(status: 'success' | 'failed', message: string) {
+        async emitSumEvent(event: string, data: any) {
+            console.log(data);
+            this.time += (data.value * 1000);
+            emit(event, data);
+        },
+        async emitEvent(event: string, data: any) {
+            emit(event, data);
+        },
+        async showNotif(status: 'success' | 'failed', message: string) {
             this.notificationStatus = status;
             this.notificationMessage = message;
             this.isNotifShown = true;
             setTimeout(() => {
                 this.isNotifShown = false;
             }, 2000);
+        },
+        async closeApp() {
+            invoke('close_all_processes');
         }
     }
 }

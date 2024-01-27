@@ -36,9 +36,9 @@ export default defineNuxtConfig({
     {
       src: "~/plugins/disable-right-click.ts",
     },
-    // {
-    //   src: "~/plugins/disable-refresh.ts",
-    // },
+    {
+      src: "~/plugins/disable-refresh.ts",
+    },
     {
       src: "~/plugins/firebase.ts",
     },
