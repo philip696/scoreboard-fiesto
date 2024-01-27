@@ -1,8 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use lapin::options::BasicPublishOptions;
-use lapin::{BasicProperties, Connection, ConnectionProperties};
 use serde::{Deserialize, Serialize};
 use serialport::SerialPort;
 use std::collections::HashMap;
@@ -40,9 +38,9 @@ fn list_serial_ports() -> Result<Vec<String>, String> {
 #[tauri::command]
 fn connect_serial_port(
     port_name: String,
-    port_map: State<serial::PortMap>,
+    // port_map: State<serial::PortMap>,
 ) -> Result<String, String> {
-    match serial::connect_port(&port_name, &port_map) {
+    match serial::connect_port(&port_name) {
         Ok(_) => Ok(format!("Successfully connected to {}", port_name)),
         Err(e) => Err(e),
     }
@@ -56,12 +54,11 @@ fn disconnect_serial_port(port_map: State<serial::PortMap>) -> Result<String, St
 }
 
 #[tauri::command]
-fn send_serial_data(
-    port_name: String,
-    data: Vec<u8>,
-    port_map: State<serial::PortMap>,
-) -> Result<(), String> {
-    serial::send_data(&port_name, &data, &port_map)
+fn trigger_alarm(port_name: String, duration: u64) -> Result<String, String> {
+    match serial::trigger_serial_alarm(&port_name, duration) {
+        Ok(_) => Ok("Successfully triggered alarm".to_string()),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 // async fn produce_to_rabbitmq(
@@ -281,7 +278,7 @@ async fn main() {
             list_serial_ports,
             connect_serial_port,
             disconnect_serial_port,
-            send_serial_data,
+            trigger_alarm,
             save_config,
             get_config,
             open_config,
@@ -290,14 +287,9 @@ async fn main() {
         ])
         .setup(|app| {
             let splashscreen_window = app.get_window("splashscreen").unwrap();
-            let controller_window = app.get_window("controllerpage").unwrap();
+            // let controller_window = app.get_window("controllerpage").unwrap();
             // let main_windows = app.get_window("indexpage").unwrap();
             let configuration_windows = app.get_window("configurationpage").unwrap();
-
-            controller_window.listen("tauri://close-requested", |_| {
-                println!("close requested");
-                // std::process::exit(0);
-            });
 
             tauri::async_runtime::spawn(async move {
                 sleep(Duration::from_secs(1)).await;

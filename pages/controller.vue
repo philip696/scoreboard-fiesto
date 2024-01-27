@@ -102,21 +102,25 @@
                     Top
                     Player</button>
             </div>
-            <div class="flex justify-between items-center ml-10 w-full px-8">
-                <Icon @click="openConfig" name="mynaui:config" class="text-3xl hover:cursor-pointer hover:bg-blue-400" />
-                <div class="flex">
+            <div class="flex justify-between items-center mx-10 mt-8 w-full px-8">
+                <Icon @click="openConfig" name="mynaui:config"
+                    class="text-5xl hover:cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 m-2 rounded" />
+                <div class="flex items-center">
+                    <Icon @click="triggerAlarm"
+                        class="text-5xl hover:cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 m-2 rounded"
+                        name="material-symbols:sound-detection-loud-sound" />
                     <select
-                        class="block appearance-none bg-white border border-gray-400 hover:border-gray-500 px-4 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
+                        class="appearance-none bg-white border border-gray-400 hover:border-gray-500 py-2 px-4 m-2 rounded focus:outline-none focus:shadow-outline"
                         v-model="selectedPort" :disabled="isSerialConnected">
                         <option value="">PORT?</option>
                         <option v-for="port in serialPorts" :value="port">{{ port }}</option>
                     </select>
                     <button @click="fetchSerialPorts"
-                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 m-2 rounded">Refresh</button>
+                        class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Refresh</button>
                     <button v-if="!isSerialConnected" @click="serialConnect"
-                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 m-2 rounded">Connect</button>
+                        class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Connect</button>
                     <button v-else @click="serialDisconnect"
-                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 m-2 rounded">Disconnect</button>
+                        class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 m-2 rounded">Disconnect</button>
                 </div>
             </div>
             <div v-show="isNotifShown"
@@ -173,6 +177,7 @@ export default {
             } as PreviewUrl,
             serialPorts: [] as string[],
             selectedPort: '' as string,
+            isSerialConnecting: false as boolean,
             isSerialConnected: false as boolean,
             isNotifShown: false as boolean,
             notificationStatus: '' as 'success' | 'failed',
@@ -269,20 +274,24 @@ export default {
         async openConfig() {
             invoke('open_config');
         },
+        async triggerAlarm() {
+            console.log('trigger alarm');
+            invoke('trigger_alarm', { portName: this.selectedPort, duration: 5 });
+        },
         async stopTimer() {
-            emit('stop_timer_event')
+            emit('stop_timer_event');
         },
         async startTimerTimeout() {
-            emit('start_timeout_event', { initialTime: 60000 })
+            emit('start_timeout_event', { initialTime: 60000 });
         },
         async stopTimerTimeout() {
-            emit('stop_timeout_event')
+            emit('stop_timeout_event');
         },
         async showBanner(key: "scorer_url" | "dark_statistic_url" | "light_statistic_url" | "man_of_the_match_url" | "top_player_url") {
             emit('show_banner', { url: this.listUrl[key] });
         },
         async updateQuarter() {
-            emit('quarter_event', { quarter: this.quarter })
+            emit('quarter_event', { quarter: this.quarter });
         },
         async fetchSerialPorts() {
             try {
@@ -293,6 +302,7 @@ export default {
             }
         },
         async serialConnect() {
+            this.isSerialConnecting = true;
             let status = await invoke('connect_serial_port', { portName: this.selectedPort })
                 .then(response => {
                     // Success notification
@@ -302,6 +312,9 @@ export default {
                 .catch(error => {
                     // Error notification
                     this.showNotif('failed', 'Failed to connect serial port');
+                })
+                .finally(() => {
+                    this.isSerialConnecting = false;
                 });
             console.log(status);
         },
