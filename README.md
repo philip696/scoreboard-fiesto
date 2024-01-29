@@ -18,7 +18,7 @@ This Basketball Scoreboard App is a desktop application built with [Tauri](https
 - [Node.js](https://nodejs.org/)
 - [Rust](https://www.rust-lang.org/tools/install)
 - [Nuxt](https://nuxt.com/docs/getting-started/installation)
-- [Tauri](https://tauri.app/)
+- [Tauri](https://tauri.app/) (addition: cargo install tauri-cli)
 
 ### Installation
 
