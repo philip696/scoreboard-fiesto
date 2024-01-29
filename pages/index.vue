@@ -96,6 +96,13 @@
                 </div>
             </div>
         </div>
+
+        <div v-show="isVideo" class="flex justify-center items-center h-screen bg-black">
+            <video ref="videoPlayer" class="w-full h-full" controls @click="toggleFullscreen">
+                <source src="../assets/video/3point.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
     </div>
 </template>
 
@@ -118,6 +125,7 @@ export default {
             isTimeout: false as boolean,
             isBannerShown: false as boolean,
             previewUrl: '' as string,
+            isVideo: false as boolean,
             quarter: 0 as number,
             teamA: {
                 name: '',
@@ -189,6 +197,21 @@ export default {
                 default:
                     break;
             }
+        })
+
+        listen('3point_event', (event: any) => {
+            this.isVideo = true;
+            const videoElement = this.$refs.videoPlayer as HTMLVideoElement;
+            if (videoElement) {
+                videoElement.play()
+                    .catch(error => {
+                        console.error("Error attempting to play video:", error);
+                    });
+                setTimeout(() => {
+                    this.isVideo = false;
+                }, 3000);
+            }
+            // this.toggleFullscreen();
         })
 
         await listen('score_step_event', (event: any) => {
@@ -386,6 +409,44 @@ export default {
         }
     },
     methods: {
+        playVideo() {
+            const videoElement = this.$refs.videoPlayer as HTMLVideoElement;
+            if (videoElement) {
+                videoElement.play().catch(error => {
+                    console.error("Error attempting to play video:", error);
+                });
+            }
+        },
+        toggleFullscreen() {
+            const videoElement = this.$refs.videoPlayer as HTMLVideoElement & {
+                webkitRequestFullscreen?: () => Promise<void>;
+                mozRequestFullScreen?: () => Promise<void>;
+                msRequestFullscreen?: () => Promise<void>;
+            };
+
+            if (!document.fullscreenElement) {
+                console.log(document.fullscreenElement);
+                if (videoElement.requestFullscreen) {
+                    videoElement.requestFullscreen();
+                } else if (videoElement.webkitRequestFullscreen) { // Safari
+                    videoElement.webkitRequestFullscreen();
+                } else if (videoElement.mozRequestFullScreen) { // Firefox
+                    videoElement.mozRequestFullScreen();
+                } else if (videoElement.msRequestFullscreen) { // IE11
+                    videoElement.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if ((document as any).webkitExitFullscreen) { // Safari
+                    (document as any).webkitExitFullscreen();
+                } else if ((document as any).mozCancelFullScreen) { // Firefox
+                    (document as any).mozCancelFullScreen();
+                } else if ((document as any).msExitFullscreen) { // IE11
+                    (document as any).msExitFullscreen();
+                }
+            }
+        },
         startTimer(initialTime: number = 600000) {
             // const adsWindow = new WebviewWindow('ads');
             // adsWindow.show();
@@ -406,6 +467,7 @@ export default {
                         this.time = 0;
                         this.stopTimer();
                         emit('timer_event', { value: this.time });
+                        emit('timer_stop_event');
                     }
                 }, 10);
             }

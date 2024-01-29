@@ -2,6 +2,8 @@
     <div class="fixed w-screen h-screen bg-slate-400">
         <div data-tauri-drag-region class="flex items-center justify-end h-[5%] w-full bg-slate-300 hover:cursor-move">
             <span data-tauri-drag-region class="w-full text-center text-2xl font-bold">Controller</span>
+            <button class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 rounded"
+                @click="toggleFullscreen">o</button>
             <button class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 rounded"
                 @click="closeApp">x</button>
         </div>
@@ -49,15 +51,15 @@
                         <div class="flex items-center justify-around w-full mb-2">
                             <button @click="() => { emitSumEvent('change_time_event', { value: 60 }); }"
                                 class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 rounded w-12 h-12">
-                                +60
+                                +
                             </button>
-                            <button @click="() => { emitSumEvent('change_time_event', { value: 10 }); }"
+                            <!-- <button @click="() => { emitSumEvent('change_time_event', { value: 10 }); }"
                                 class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 rounded w-12 h-12">
                                 +10
-                            </button>
+                            </button> -->
                             <button @click="() => { emitSumEvent('change_time_event', { value: 1 }); }"
                                 class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 rounded w-12 h-12">
-                                +1
+                                +
                             </button>
                         </div>
                         <span class="text-3xl font-bold font-martianMono">
@@ -66,15 +68,15 @@
                         <div class="flex items-center justify-around w-full mt-2">
                             <button @click="() => { emitSumEvent('change_time_event', { value: -60 }); }"
                                 class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold p-2 rounded w-12 h-12">
-                                -60
+                                -
                             </button>
-                            <button @click="() => { emitSumEvent('change_time_event', { value: -10 }); }"
+                            <!-- <button @click="() => { emitSumEvent('change_time_event', { value: -10 }); }"
                                 class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold p-2 rounded w-12 h-12">
                                 -10
-                            </button>
+                            </button> -->
                             <button @click="() => { emitSumEvent('change_time_event', { value: -1 }); }"
                                 class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold p-2 rounded w-12 h-12">
-                                -1
+                                -
                             </button>
                         </div>
                     </div>
@@ -83,6 +85,9 @@
                     class="flex flex-col items-center justify-center h-full w-1/3" />
             </div>
             <div class="flex items-center justify-around">
+                <button @click="triggerEvent('3point')"
+                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">3
+                    Point</button>
                 <button @click="showBanner('scorer_url')"
                     class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
                     Scorer</button>
@@ -226,6 +231,11 @@ export default {
             this.quarter = event.payload.quarter;
         });
 
+        listen('timer_stop_event', (event: any) => {
+            this.isRunning = false;
+            this.triggerAlarm();
+        });
+
         invoke('get_config').then((state: any) => {
             this.listUrl = state;
         })
@@ -297,6 +307,12 @@ export default {
         },
         async showBanner(key: "scorer_url" | "dark_statistic_url" | "light_statistic_url" | "man_of_the_match_url" | "top_player_url") {
             emit('show_banner', { url: this.listUrl[key] });
+        },
+        async triggerEvent(event_name: string) {
+            emit(`${event_name}_event`, {});
+        },
+        async toggleFullscreen() {
+            invoke('toggle_fullscreen');
         },
         // async updateQuarter() {
         //     emit('quarter_event', { quarter: this.quarter });
