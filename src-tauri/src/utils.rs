@@ -5,7 +5,10 @@ use std::path::{Path, PathBuf};
 
 pub fn ensure_file_exists(file_path: &Path) -> Result<(), Error> {
     if !file_path.exists() {
-        File::create(file_path)?;
+        match File::create(file_path) {
+            Ok(_) => println!("File created: {}", file_path.display()),
+            Err(e) => println!("Error creating file: {}", e),
+        }
         println!("File created: {}", file_path.display());
     } else {
         println!("File already exists: {}", file_path.display());

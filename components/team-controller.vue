@@ -53,6 +53,11 @@ import { emit } from "@tauri-apps/api/event";
 import type { TeamInfo } from "~/types/TeamInfo";
 
 export default {
+    data() {
+        return {
+            timeout: null as any
+        }
+    },
     props: {
         info: {
             type: Object as () => TeamInfo,
@@ -70,7 +75,11 @@ export default {
     watch: {
         info: {
             handler(newValue) {
-                this.emitEvent('team_name_event', { team: this.teamname, name: this.info.name })
+                clearTimeout(this.timeout);
+                this.timeout = setTimeout(() => {
+                    // Your logic here
+                    this.emitEvent('team_name_event', { team: this.teamname, name: this.info.name })
+                }, 500);
             },
             deep: true
         }

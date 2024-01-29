@@ -193,7 +193,7 @@ fn close_all_processes() {
 #[tokio::main]
 async fn main() {
     let config_state = ConfigState {
-        file_path: "BasketScoreboard/settings.json".to_string(),
+        file_path: "basket_config.json".to_string(),
     };
 
     let file_path = utils::get_absolute_path_in_home(&config_state.file_path).unwrap();
