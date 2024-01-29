@@ -1,5 +1,11 @@
 <template>
     <div class="fixed container-body font-basementGrotesque bg-[url('~/assets/img/mock.jpg')]">
+        <div data-tauri-drag-region class="flex items-center justify-end h-[5%] w-full bg-slate-300 hover:cursor-move"
+            id="handle">
+            <span data-tauri-drag-region class="w-full text-center text-2xl font-bold">Controller</span>
+            <button class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 rounded"
+                @click="toggleFullscreen">o</button>
+        </div>
         <div class="bg-iframe">
             <!-- <iframe width="560" height="315" src="https://www.youtube.com/embed/Ps-0f0K6izM?si=mj9tm8_keiaPgwZC&autoplay=1&controls=0&loop=1&showinfo=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe> -->
             <video width="320" height="240" autoplay loop muted id="bgVideo">
@@ -418,34 +424,7 @@ export default {
             }
         },
         toggleFullscreen() {
-            const videoElement = this.$refs.videoPlayer as HTMLVideoElement & {
-                webkitRequestFullscreen?: () => Promise<void>;
-                mozRequestFullScreen?: () => Promise<void>;
-                msRequestFullscreen?: () => Promise<void>;
-            };
-
-            if (!document.fullscreenElement) {
-                console.log(document.fullscreenElement);
-                if (videoElement.requestFullscreen) {
-                    videoElement.requestFullscreen();
-                } else if (videoElement.webkitRequestFullscreen) { // Safari
-                    videoElement.webkitRequestFullscreen();
-                } else if (videoElement.mozRequestFullScreen) { // Firefox
-                    videoElement.mozRequestFullScreen();
-                } else if (videoElement.msRequestFullscreen) { // IE11
-                    videoElement.msRequestFullscreen();
-                }
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if ((document as any).webkitExitFullscreen) { // Safari
-                    (document as any).webkitExitFullscreen();
-                } else if ((document as any).mozCancelFullScreen) { // Firefox
-                    (document as any).mozCancelFullScreen();
-                } else if ((document as any).msExitFullscreen) { // IE11
-                    (document as any).msExitFullscreen();
-                }
-            }
+            invoke('toggle_fullscreen');
         },
         startTimer(initialTime: number = 600000) {
             // const adsWindow = new WebviewWindow('ads');
@@ -543,6 +522,23 @@ export default {
     font-family: BasementGrotesque;
     src: url("BasementGrotesque.otf") format("opentype");
 } */
+
+div#handle button {
+    opacity: 0;
+}
+
+div#handle button:hover {
+    opacity: 1;
+}
+
+div#handle {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    background: transparent;
+    z-index: 2;
+    color: transparent;
+}
 
 .container-body {
     margin: 0;

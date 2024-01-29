@@ -66,12 +66,12 @@
     },
     "windows": [
       {
-        "width": 1920,
-        "height": 1080,
+        "width": 1280,
+        "height": 800,
         "center": true,
         "visible": false,
         "resizable": true,
-        "fullscreen": false,
+        "fullscreen": true,
         "decorations": false,
         "label": "indexpage",
         "title": "Sportkit Scoreboard"
