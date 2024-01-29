@@ -54,8 +54,13 @@ fn disconnect_serial_port(port_map: State<serial::PortMap>) -> Result<String, St
 }
 
 #[tauri::command]
-fn trigger_alarm(port_name: String, duration: u64) -> Result<String, String> {
-    match serial::trigger_serial_alarm(&port_name, duration) {
+async fn trigger_alarm(port_name: String, duration: String) -> Result<String, String> {
+    let duration: u64 = match duration.parse::<u64>() {
+        Ok(num) => num,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    match serial::trigger_serial_alarm(&port_name, duration).await {
         Ok(_) => Ok("Successfully triggered alarm".to_string()),
         Err(e) => Err(e.to_string()),
     }

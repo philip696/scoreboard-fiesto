@@ -106,9 +106,14 @@
                 <Icon @click="openConfig" name="mynaui:config"
                     class="text-5xl hover:cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 m-2 rounded" />
                 <div class="flex items-center">
-                    <Icon @click="triggerAlarm"
-                        class="text-5xl hover:cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 m-2 rounded"
-                        name="material-symbols:sound-detection-loud-sound" />
+                    <input type="text" v-model="alarmDuration"
+                        class="border border-gray-400 hover:border-gray-500 py-2 px-4 m-2 w-12 rounded text-center">
+                    <label for="alarmDuration" class="text-lg font-bold">Second</label>
+                    <button @click="triggerAlarm" :disabled="!isSerialConnected">
+                        <Icon
+                            class="text-5xl hover:cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 m-2 rounded"
+                            name="material-symbols:sound-detection-loud-sound" />
+                    </button>
                     <select
                         class="appearance-none bg-white border border-gray-400 hover:border-gray-500 py-2 px-4 m-2 rounded focus:outline-none focus:shadow-outline"
                         v-model="selectedPort" :disabled="isSerialConnected">
@@ -170,11 +175,12 @@ export default {
                 foul: 0,
                 timeout: 0
             } as TeamInfo,
-            quarter: 0 as number,
+            quarter: 1 as number,
             previewUrl: '' as string,
             isBannerShown: false as boolean,
             listUrl: {
             } as PreviewUrl,
+            alarmDuration: '5' as string,
             serialPorts: [] as string[],
             selectedPort: '' as string,
             isSerialConnecting: false as boolean,
@@ -215,6 +221,8 @@ export default {
         });
 
         listen('quarter_event', (event: any) => {
+            console.log(event.payload.quarter)
+            invoke('update_quarter', { quarter: `${event.payload.quarter}` })
             this.quarter = event.payload.quarter;
         });
 
@@ -276,7 +284,7 @@ export default {
         },
         async triggerAlarm() {
             console.log('trigger alarm');
-            invoke('trigger_alarm', { portName: this.selectedPort, duration: 5 });
+            invoke('trigger_alarm', { portName: this.selectedPort, duration: this.alarmDuration });
         },
         async stopTimer() {
             emit('stop_timer_event');
@@ -290,9 +298,9 @@ export default {
         async showBanner(key: "scorer_url" | "dark_statistic_url" | "light_statistic_url" | "man_of_the_match_url" | "top_player_url") {
             emit('show_banner', { url: this.listUrl[key] });
         },
-        async updateQuarter() {
-            emit('quarter_event', { quarter: this.quarter });
-        },
+        // async updateQuarter() {
+        //     emit('quarter_event', { quarter: this.quarter });
+        // },
         async fetchSerialPorts() {
             try {
                 const ports = await invoke('list_serial_ports') as string[];

@@ -13,7 +13,7 @@ pub fn list_ports() -> Result<Vec<String>, String> {
     }
 }
 
-pub fn trigger_serial_alarm(port_name: &str, duration: u64) -> Result<(), String> {
+pub async fn trigger_serial_alarm(port_name: &str, duration: u64) -> Result<(), String> {
     match send_data(port_name, "on\n".to_string()) {
         Ok(_) => {}
         Err(_e) => {}
