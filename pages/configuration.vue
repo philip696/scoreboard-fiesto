@@ -115,12 +115,12 @@
                 <div class="flex items-center justify-between mt-6">
                     <button @click="saveConfig"
                         class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                        type="submit">
+                        type="button">
                         Save
                     </button>
                     <button @click="openApplication"
                         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                        type="submit">
+                        type="button">
                         Done
                     </button>
                 </div>
@@ -144,6 +144,7 @@
 
 <script lang="ts">
 import { invoke } from '@tauri-apps/api/tauri';
+import { emit, listen } from '@tauri-apps/api/event';
 
 export default {
     data() {
@@ -188,6 +189,19 @@ export default {
             }
         },
         async openApplication() {
+            await invoke('save_config', {
+                rabbitmqHost: this.config.rabbitmq_host,
+                rabbitmqUsername: this.config.rabbitmq_username,
+                rabbitmqPassword: this.config.rabbitmq_password,
+                eventId: this.config.event_id,
+                fieldId: this.config.field_id,
+                scorerUrl: this.config.scorer_url,
+                darkStatisticUrl: this.config.dark_statistic_url,
+                lightStatisticUrl: this.config.light_statistic_url,
+                manOfTheMatchUrl: this.config.man_of_the_match_url,
+                topPlayerUrl: this.config.top_player_url
+            });
+            await emit('update_config_event', this.config);
             invoke('end_config');
         },
         async preview(url: string) {

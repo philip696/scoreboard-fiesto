@@ -7,8 +7,8 @@
             <button class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 rounded"
                 @click="closeApp">x</button>
         </div>
-        <div class="flex flex-col items-center justify-center h-[95%] p-8 w-full">
-            <div class="flex items-center justify-between h-full w-full">
+        <div class="flex flex-col items-center justify-center h-[90%] p-8 w-full">
+            <div class="flex items-center justify-between h-[70%] w-full">
                 <TeamController defaultname="Terang" teamname="teamA" :info="teamA"
                     class="flex flex-col items-center justify-center h-full w-1/3" />
                 <div class="flex flex-col items-center justify-center h-full w-1/3">
@@ -84,30 +84,35 @@
                 <TeamController defaultname="Gelap" teamname="teamB" :info="teamB"
                     class="flex flex-col items-center justify-center h-full w-1/3" />
             </div>
-            <div class="flex items-center justify-around">
+            <div class="flex items-center justify-around h-[10%]">
                 <button @click="triggerEvent('3point')"
                     class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">3
                     Point</button>
-                <button @click="showBanner('scorer_url')"
-                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                <button @click="triggerEvent('and_one')"
+                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">And
+                    One</button>
+            </div>
+            <div class="flex items-center justify-around h-[10%]">
+                <button @click="toggleBanner('scorer_url')"
+                    class="bg-amber-500 hover:bg-amber-600 active:bg-amber-900 text-white font-bold py-2 px-4 m-2 rounded">Toggle
                     Scorer</button>
-                <button @click="showBanner('dark_statistic_url')"
-                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                <button @click="toggleBanner('dark_statistic_url')"
+                    class="bg-amber-500 hover:bg-amber-600 active:bg-amber-900 text-white font-bold py-2 px-4 m-2 rounded">Toggle
                     Statistic
                     (Dark)</button>
-                <button @click="showBanner('light_statistic_url')"
-                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                <button @click="toggleBanner('light_statistic_url')"
+                    class="bg-amber-500 hover:bg-amber-600 active:bg-amber-900 text-white font-bold py-2 px-4 m-2 rounded">Toggle
                     Statistic
                     (Light)</button>
-                <button @click="showBanner('man_of_the_match_url')"
-                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                <button @click="toggleBanner('man_of_the_match_url')"
+                    class="bg-amber-500 hover:bg-amber-600 active:bg-amber-900 text-white font-bold py-2 px-4 m-2 rounded">Toggle
                     MOTM</button>
-                <button @click="showBanner('top_player_url')"
-                    class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">Show
+                <button @click="toggleBanner('top_player_url')"
+                    class="bg-amber-500 hover:bg-amber-600 active:bg-amber-900 text-white font-bold py-2 px-4 m-2 rounded">Toggle
                     Top
                     Player</button>
             </div>
-            <div class="flex justify-between items-center mx-10 mt-8 w-full px-8">
+            <div class="flex justify-between items-center mx-10 w-full px-8 h-[10%]">
                 <Icon @click="openConfig" name="mynaui:config"
                     class="text-5xl hover:cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 m-2 rounded" />
                 <div class="flex items-center">
@@ -183,6 +188,7 @@ export default {
             quarter: 1 as number,
             previewUrl: '' as string,
             isBannerShown: false as boolean,
+            showingBanner: '' as string,
             listUrl: {
             } as PreviewUrl,
             alarmDuration: '5' as string,
@@ -236,9 +242,11 @@ export default {
             this.triggerAlarm();
         });
 
-        invoke('get_config').then((state: any) => {
-            this.listUrl = state;
-        })
+        listen('update_config_event', (event: any) => {
+            this.getConfig();
+        });
+
+        this.getConfig();
 
         // Periodically check if data is still coming
         setInterval(() => {
@@ -282,6 +290,11 @@ export default {
         }
     },
     methods: {
+        async getConfig() {
+            invoke('get_config').then((state: any) => {
+                this.listUrl = state;
+            })
+        },
         async startTimer() {
             if (this.time > 0) {
                 emit('start_timer_event', { initialTime: this.time })
@@ -305,8 +318,15 @@ export default {
         async stopTimerTimeout() {
             emit('stop_timeout_event');
         },
-        async showBanner(key: "scorer_url" | "dark_statistic_url" | "light_statistic_url" | "man_of_the_match_url" | "top_player_url") {
-            emit('show_banner', { url: this.listUrl[key] });
+        async toggleBanner(key: "scorer_url" | "dark_statistic_url" | "light_statistic_url" | "man_of_the_match_url" | "top_player_url") {
+            if (this.showingBanner == key) {
+                emit('hide_banner', {});
+                this.showingBanner = '';
+            } else {
+                emit('show_banner', { url: this.listUrl[key] });
+                this.showingBanner = key;
+
+            }
         },
         async triggerEvent(event_name: string) {
             emit(`${event_name}_event`, {});

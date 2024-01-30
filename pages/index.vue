@@ -103,9 +103,16 @@
             </div>
         </div>
 
-        <div v-show="isVideo" class="flex justify-center items-center h-screen bg-black">
-            <video ref="videoPlayer" class="w-full h-full" controls @click="toggleFullscreen">
+        <div v-show="is3Point" class="flex justify-center items-center h-screen bg-black">
+            <video ref="threePointPlayer" class="w-full h-full" controls @click="toggleFullscreen">
                 <source src="../assets/video/3point.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <div v-show="isAndOne" class="flex justify-center items-center h-screen bg-black">
+            <video ref="andOnePlayer" class="w-full h-full" controls @click="toggleFullscreen">
+                <source src="../assets/video/and_one.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
         </div>
@@ -131,7 +138,8 @@ export default {
             isTimeout: false as boolean,
             isBannerShown: false as boolean,
             previewUrl: '' as string,
-            isVideo: false as boolean,
+            is3Point: false as boolean,
+            isAndOne: false as boolean,
             quarter: 0 as number,
             teamA: {
                 name: '',
@@ -165,6 +173,9 @@ export default {
         await listen('show_banner', (event: any) => {
             this.showBanner(event.payload.url);
         })
+        await listen('hide_banner', (event: any) => {
+            this.hideBanner();
+        })
         await listen('quarter_event', (event: any) => {
             this.quarter = event.payload.quarter;
             invoke('update_quarter', { quarter: this.quarter })
@@ -190,7 +201,6 @@ export default {
         })
 
         await listen('team_name_event', (event: any) => {
-            console.log(event.payload)
             switch (event.payload.team) {
                 case 'teamA':
                     this.teamA.name = event.payload.name;
@@ -205,19 +215,32 @@ export default {
             }
         })
 
-        listen('3point_event', (event: any) => {
-            this.isVideo = true;
-            const videoElement = this.$refs.videoPlayer as HTMLVideoElement;
+        await listen('3point_event', (event: any) => {
+            this.is3Point = true;
+            const videoElement = this.$refs.threePointPlayer as HTMLVideoElement;
             if (videoElement) {
                 videoElement.play()
                     .catch(error => {
                         console.error("Error attempting to play video:", error);
                     });
                 setTimeout(() => {
-                    this.isVideo = false;
+                    this.is3Point = false;
                 }, 3000);
             }
-            // this.toggleFullscreen();
+        })
+
+        await listen('and_one_event', (event: any) => {
+            this.isAndOne = true;
+            const videoElement = this.$refs.andOnePlayer as HTMLVideoElement;
+            if (videoElement) {
+                videoElement.play()
+                    .catch(error => {
+                        console.error("Error attempting to play video:", error);
+                    });
+                setTimeout(() => {
+                    this.isAndOne = false;
+                }, 3000);
+            }
         })
 
         await listen('score_step_event', (event: any) => {
@@ -415,14 +438,6 @@ export default {
         }
     },
     methods: {
-        playVideo() {
-            const videoElement = this.$refs.videoPlayer as HTMLVideoElement;
-            if (videoElement) {
-                videoElement.play().catch(error => {
-                    console.error("Error attempting to play video:", error);
-                });
-            }
-        },
         toggleFullscreen() {
             invoke('toggle_fullscreen');
         },
@@ -481,9 +496,12 @@ export default {
         showBanner(url: string) {
             this.previewUrl = url;
             this.isBannerShown = true;
-            setTimeout(() => {
-                this.isBannerShown = false;
-            }, 3000);
+            // setTimeout(() => {
+            //     this.isBannerShown = false;
+            // }, 3000);
+        },
+        hideBanner() {
+            this.isBannerShown = false;
         },
         async sendToFirebase() {
             const { $firestore: firestore } = useNuxtApp();
