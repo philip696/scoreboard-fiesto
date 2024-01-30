@@ -94,7 +94,8 @@
                 <TeamInfo name="Team 2" :info="teamB" />
             </div>
         </div> -->
-        <div v-show="isBannerShown" class="fixed inset-0 w-screen h-screen flex items-center justify-center bg-opacity-0">
+        <div :class="{ 'layer-active opacity-100 layer-popup': isBannerShown, 'opacity-0 layer-popup': !isBannerShown }"
+            class="fixed inset-0 w-screen h-screen flex items-center justify-center bg-opacity-0">
             <div class="relativeshadow-lg w-screen">
                 <span class="absolute cursor-pointer p-4" @click="isBannerShown = false">x</span>
                 <div>
@@ -545,6 +546,10 @@ div#handle button {
     opacity: 0;
 }
 
+.layer-popup {
+    transition: all 0.5s ease-out;
+}
+
 div#handle button:hover {
     opacity: 1;
 }
@@ -750,7 +755,7 @@ div.wrapper-score {
     position: absolute;
     width: 100%;
     bottom: -6px;
-    z-index: 2;
+    z-index: 1;
 }
 
 .body-score {
