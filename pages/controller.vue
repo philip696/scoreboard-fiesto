@@ -7,7 +7,7 @@
             <button class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 rounded"
                 @click="closeApp">x</button>
         </div>
-        <div class="flex flex-col items-center justify-center overflow-y-scroll p-8 h-full w-full">
+        <div class="flex flex-col items-center overflow-y-scroll overscroll-x-hidden p-8 h-full w-full">
             <div class="flex items-center justify-between w-full">
                 <TeamController defaultname="Terang" teamname="teamA" :info="teamA"
                     class="flex flex-col items-center justify-center h-full w-1/3" />
@@ -186,6 +186,7 @@ export default {
         const dir = await open({
           directory: true,
           multiple: false,
+          
           defaultPath: await appDataDir()
         })
 
