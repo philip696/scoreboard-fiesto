@@ -20,13 +20,7 @@ lapin = "2.0.0"
 serde_json = "1.0"
 tokio-amqp = "2.0.0"
 futures-util = "0.3.21"
-tauri = { version = "1.5.4", features = [
-    "window-all",
-    "fs-remove-dir",
-    "fs-create-dir",
-    "fs-remove-file",
-    "fs-copy-file",
-    "fs-rename-file",
+tauri = { version = "1.5.4", features = [ "api-all",
 ] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }

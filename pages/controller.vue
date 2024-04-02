@@ -7,8 +7,8 @@
             <button class="bg-red-500 hover:bg-red-600 active:bg-red-900 text-white font-bold py-2 px-4 rounded"
                 @click="closeApp">x</button>
         </div>
-        <div class="flex flex-col items-center justify-center h-[90%] p-8 w-full">
-            <div class="flex items-center justify-between h-[70%] w-full">
+        <div class="flex flex-col items-center justify-center overflow-y-scroll p-8 h-full w-full">
+            <div class="flex items-center justify-between w-full">
                 <TeamController defaultname="Terang" teamname="teamA" :info="teamA"
                     class="flex flex-col items-center justify-center h-full w-1/3" />
                 <div class="flex flex-col items-center justify-center h-full w-1/3">
@@ -84,7 +84,7 @@
                 <TeamController defaultname="Gelap" teamname="teamB" :info="teamB"
                     class="flex flex-col items-center justify-center h-full w-1/3" />
             </div>
-            <div class="flex items-center justify-around h-[10%]">
+            <div class="flex items-center justify-around">
                 <button @click="triggerEvent('3point')"
                     class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">3
                     Point</button>
@@ -92,7 +92,7 @@
                     class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded">And
                     One</button>
             </div>
-            <div class="flex items-center justify-around h-[10%]">
+            <div class="flex items-center justify-around">
                 <button @click="toggleBanner('scorer_url')"
                     class="bg-amber-500 hover:bg-amber-600 active:bg-amber-900 text-white font-bold py-2 px-4 m-2 rounded">Toggle
                     Scorer</button>
@@ -112,7 +112,18 @@
                     Top
                     Player</button>
             </div>
-            <div class="flex justify-between items-center mx-10 w-full px-8 h-[10%]">
+            <div class="flex justify-center items-center w-full">
+              <button @click="openAdDirectory"
+                class="bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold py-2 px-4 m-2 rounded"
+              >Open Ad Directory</button>
+            </div>
+            <div class="flex justify-center items-center w-full">
+              <button v-for="dir in adDirectories"
+                @click="playAdDirectory(dir)"
+                class="bg-amber-500 hover:bg-amber-600 active:bg-amber-900 text-white font-bold py-2 px-4 m-2 rounded"
+                >{{ dir.name }}</button>
+            </div>
+            <div class="flex justify-between items-center mx-10 w-full px-8">
                 <Icon @click="openConfig" name="mynaui:config"
                     class="text-5xl hover:cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-900 text-white font-bold p-2 m-2 rounded" />
                 <div class="flex items-center">
@@ -149,9 +160,15 @@
 
 <script lang="ts">
 import { emit, listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/tauri';
+import { convertFileSrc, invoke } from '@tauri-apps/api/tauri';
 import type { TeamInfo } from '~/types/TeamInfo';
 import { getCurrent } from '@tauri-apps/api/window';
+import { readDir, type FileEntry } from '@tauri-apps/api/fs';
+import { ref } from 'vue'
+
+import { open } from '@tauri-apps/api/dialog';
+import { appDataDir } from '@tauri-apps/api/path';
+
 
 type PreviewUrl = {
     'scorer_url': string,
@@ -162,6 +179,30 @@ type PreviewUrl = {
 }
 
 export default {
+    setup() {
+      const adDirectories = ref<FileEntry[]>([]);
+
+      async function openAdDirectory() {
+        const dir = await open({
+          directory: true,
+          multiple: false,
+          defaultPath: await appDataDir()
+        })
+
+        if (dir === null) return;
+        
+        adDirectories.value = (await readDir(dir as string)).filter(e => e.children !== undefined);
+      }
+
+      async function playAdDirectory(dir: FileEntry) {
+        // invoke event to rust backend 
+      }
+
+      return {
+        adDirectories,
+        openAdDirectory
+      }
+    },
     data() {
         return {
             time: 0 as number,
@@ -395,7 +436,7 @@ export default {
         },
         async closeApp() {
             invoke('close_all_processes');
-        }
+        }        
     }
 }
 </script>
